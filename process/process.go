@@ -30,7 +30,7 @@ func ProcessImg(width, height int, img image.Image, blurRadius int) image.Image 
 	}(img)
 
 	go func(image image.Image) { // foreground
-		resized := imaging.Fit(image, width, height, imaging.Lanczos)
+		resized := fit(image, width, height, imaging.Lanczos)
 		resized = resizeToIsh(resized, width, height, imaging.Lanczos)
 		fmt.Println("Image resized")
 		foreground <- resized
@@ -58,18 +58,47 @@ func ProcessImg(width, height int, img image.Image, blurRadius int) image.Image 
 func resizeToIsh(img image.Image, targetWidth int, targetHeight int, filter imaging.ResampleFilter) *image.NRGBA {
 	bounds := img.Bounds().Size()
 	width, height := bounds.X, bounds.Y
-	aspect := float64(width) / float64(height) // width:height 1:aspect
+	aspect := float64(width) / float64(height) // width:height aspect:1
 
-	fmt.Printf("\tOriginal Aspect Ratio: %v:1\n", aspect)
+	fmt.Printf("\tOriginal Aspect Ratio:\t%v:1\n", aspect)
 
-	deltaWidth := (targetWidth - width) / 4
-	deltaHeight := (targetHeight - height) / 5
+	deltaWidth := float64(targetWidth-width) / 6
+	deltaHeight := float64(targetHeight-height) / 5
 
-	finalWidth := width + deltaWidth
-	finalHeight := height + deltaHeight
+	finalWidth := width + int(deltaWidth)
+	finalHeight := height + int(deltaHeight)
 
 	aspect = float64(finalWidth) / float64(finalHeight)
-	fmt.Printf("\tResult Aspect Ratio: %v:1\n", aspect)
+	fmt.Printf("\tResult Aspect Ratio:\t%v:1\n", aspect)
+
+	//fmt.Printf("deltaW:%v\n deltaH:%v\n finalW:%v\n finalH:%v\n origW:%v\n origH:%v\n targetW%v\n targetH%v\n", deltaWidth, deltaHeight, finalWidth, finalHeight, width, height, targetWidth, targetHeight)
 
 	return imaging.Resize(img, finalWidth, finalHeight, filter)
+}
+
+/*
+	if original aspect > target aspect then width should be smaller
+	if orignial aspect < target aspects then height should be smaller
+
+	if width should be smaller then width should be set to target width
+	if height should be smaller height should be set to target height
+
+	the other will be changed in order to preserve aspect ratio
+*/
+func fit(img image.Image, targetWidth int, targetHeight int, filter imaging.ResampleFilter) *image.NRGBA {
+	bounds := img.Bounds().Size()
+	width, height := bounds.X, bounds.Y
+	aspect := float64(width) / float64(height) // width:height aspect:1
+
+	targetAspect := float64(targetWidth) / float64(targetHeight) // width:height aspect:1
+
+	if aspect > targetAspect {
+		targetHeight = 0 // make height change automatically to preserve aspect ratio
+	}
+
+	if aspect < targetAspect {
+		targetWidth = 0 // make width change automatically to preserve aspect ratio
+	}
+
+	return imaging.Resize(img, targetWidth, targetHeight, filter)
 }
