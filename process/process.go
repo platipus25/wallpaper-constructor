@@ -13,14 +13,14 @@ import (
 // ProcessImg layers the input and resizes it to make an image that will fit within the width and height parameters
 /*
 	Layers:
-		1. Bottom layer is semi-opaque solid color background using prominent color
-		2. Next layer is a blurred and stretched copy of the image
-		3. The foreground is fitted to the frame and the aspect ratio is preserved, then is streched a small ammount
+		1. The bottom layer is semi-opaque solid color background using prominent color
+		2. The background layer is the image blurred and stretched\n
+		3. The foreground is the image fitted to the frame with the aspect ratio is preserved, then streched a small ammount
 */
-func ProcessImg(width, height int, img image.Image, blurRadius int) image.Image {
-	blur := make(chan image.Image)
-	foreground := make(chan image.Image)
-	background := make(chan image.Image)
+func ProcessImg(width, height int, img image.Image, blurRadius int) *image.NRGBA {
+	blur := make(chan *image.NRGBA)
+	foreground := make(chan *image.NRGBA)
+	background := make(chan *image.NRGBA)
 
 	go func(image image.Image) { // blur
 		blurred := imaging.Fill(image, width, height, imaging.Center, imaging.Linear)
