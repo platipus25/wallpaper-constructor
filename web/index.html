@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<!--
+Copyright 2018 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Go wasm</title>
+  </head>
+
+  <body>
+    <script src="wasm_exec.js"></script>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>
+      if (!WebAssembly.instantiateStreaming) {
+        // polyfill
+        WebAssembly.instantiateStreaming = async (resp, importObject) => {
+          const source = await (await resp).arrayBuffer();
+          return await WebAssembly.instantiate(source, importObject);
+        };
+      }
+
+      const go = new Go();
+
+      let mod, inst;
+
+      WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then(
+        result => {
+          mod = result.module;
+          inst = result.instance;
+		  document.getElementById("runButton").disabled = false;
+		  run()
+        }
+      );
+
+      async function run() {
+		await go.run(inst);
+		inst = await WebAssembly.instantiate(mod, go.importObject); // reset instance
+	}
+
+	function loadFile(){
+		const upload = document.getElementById("upload")
+		const files = upload.files
+		const file = files[0]
+
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onload = () => resolve(reader.result);
+			reader.onerror = error => reject(error);
+		});
+	}
+
+
+	async function process(width = 1440, height = 900, img = "", blur = 20) {
+		console.log("Processing...")
+		width = parseInt($("#width").val())
+		height = parseInt($("#height").val())
+		blur = parseInt($("#blur").val())
+		
+		img = await loadFile()
+		console.log(img)
+
+		start = img.search(",")
+		img = img.substr(start+1)
+		console.log(start, img)
+
+		document.getElementById("runButton").disabled = true;
+		let string = window.processImg(width, height, img, blur)
+		console.log(string)
+
+		$("#image").attr("src", `data:image/png;base64,${string}`)
+	}
+    </script>
+
+	<form>
+		Width: <input id="width" value="1440"/>
+		Height: <input id="height" value="900"/>
+		Blur: <input id="blur" value="20"/>
+
+		Upload a file: <input id="upload" type="file"/>
+	</form>
+
+	<button onClick="process();" id="runButton" disabled>Run</button>
+	<img id="image" src="" />
+	<a href="" download>Download</a>
+  </body>
+</html>
