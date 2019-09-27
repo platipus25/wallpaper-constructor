@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"syscall/js"
 
-	"github.com/platipus25/wallpaperconstructor/web/web"
+	"github.com/platipus25/wallpaperconstructor/web"
 )
 
 func main() {

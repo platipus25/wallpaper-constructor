@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/micro/go-micro"
-	"github.com/platipus25/wallpaperconstructor/web/web"
+	"github.com/platipus25/wallpaperconstructor/web"
 )
 
 func main(){
