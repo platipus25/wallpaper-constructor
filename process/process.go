@@ -17,26 +17,26 @@ import (
 		2. The background layer is the image blurred and stretched\n
 		3. The foreground is the image fitted to the frame with the aspect ratio is preserved, then streched a small ammount
 */
-func ProcessImg(width, height int, img image.Image, blurRadius int) *image.NRGBA {
+func ProcessImg(width, height int, img *image.NRGBA, blurRadius int) *image.NRGBA {
 	blur := make(chan *image.NRGBA)
 	foreground := make(chan *image.NRGBA)
 	background := make(chan *image.NRGBA)
 
-	go func(image image.Image) { // blur
+	go func(image *image.NRGBA) { // blur
 		blurred := imaging.Fill(image, width, height, imaging.Center, imaging.Linear)
 		blurred = imaging.Blur(blurred, float64(blurRadius))
 		fmt.Println("Image Blurred")
 		blur <- blurred
 	}(img)
 
-	go func(image image.Image) { // foreground
+	go func(image *image.NRGBA) { // foreground
 		resized := fit(image, width, height, imaging.Lanczos)
 		resized = resizeToIsh(resized, width, height, imaging.Lanczos)
 		fmt.Println("Image resized")
 		foreground <- resized
 	}(img)
 
-	go func(image image.Image) { // background
+	go func(image *image.NRGBA) { // background
 		promColors, err := prominentcolor.Kmeans(img)
 		promColor := promColors[0].Color
 		if err != nil {
@@ -49,13 +49,13 @@ func ProcessImg(width, height int, img image.Image, blurRadius int) *image.NRGBA
 	// put it all together
 	out := <-background
 	out = imaging.OverlayCenter(out, <-blur, 0.5)
-	out = imaging.PasteCenter(out, <-foreground)
+	out = imaging.OverlayCenter(out, <-foreground, 1.0)
 	fmt.Println("Composite compiled")
 
 	return out
 }
 
-func resizeToIsh(img image.Image, targetWidth int, targetHeight int, filter imaging.ResampleFilter) *image.NRGBA {
+func resizeToIsh(img *image.NRGBA, targetWidth int, targetHeight int, filter imaging.ResampleFilter) *image.NRGBA {
 	bounds := img.Bounds().Size()
 	width, height := bounds.X, bounds.Y
 	aspect := float64(width) / float64(height) // width:height aspect:1
@@ -85,7 +85,7 @@ func resizeToIsh(img image.Image, targetWidth int, targetHeight int, filter imag
 
 	the other will be changed in order to preserve aspect ratio
 */
-func fit(img image.Image, targetWidth int, targetHeight int, filter imaging.ResampleFilter) *image.NRGBA {
+func fit(img *image.NRGBA, targetWidth int, targetHeight int, filter imaging.ResampleFilter) *image.NRGBA {
 	bounds := img.Bounds().Size()
 	width, height := bounds.X, bounds.Y
 	aspect := float64(width) / float64(height) // width:height aspect:1

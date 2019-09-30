@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"image"
 	"log"
 	"strings"
 
@@ -37,12 +38,16 @@ func main() {
 	fmt.Printf("\tInput File: %s\n\tOutput File: %s\n\tBlur Radius: %v\n\tWidth: %v\n\tHeight: %v\n", *fileName, *fileNameOut, *blurRadius, *width, *height)
 	// Decode the JPEG data. If reading from file, create a reader with
 	img, err := imaging.Open(*fileName)
+	imgNRGBA, ok := img.(*image.NRGBA)
 	if err != nil {
 		log.Fatalf("failed to open image: %v", err)
 	}
+	if ok != true {
+		log.Fatalf("failed to convert image to NRGBA")
+	}
 	fmt.Println("Image loaded")
 
-	out := wallpaperconstructor.ProcessImg(*width, *height, img, *blurRadius)
+	out := wallpaperconstructor.ProcessImg(*width, *height, imgNRGBA, *blurRadius)
 
 	err = imaging.Save(out, *fileNameOut)
 	if err != nil {
