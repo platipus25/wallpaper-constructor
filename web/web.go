@@ -24,8 +24,12 @@ func Process(width, height int, imgStr string, blurRadius int) string {
 	if err != nil {
 		log.Fatalf("Error loading image:", err)
 	}
+	imgNRGBA, ok := img.(*image.NRGBA)
+	if ok != true {
+		log.Fatalf("failed to convert image to NRGBA")
+	}
 
-	out := wallpaperconstructor.ProcessImg(width, height, img, blurRadius)
+	out := wallpaperconstructor.ProcessImg(width, height, imgNRGBA, blurRadius)
 
 	fmt.Println(len(out.Pix))
 	var b = new(bytes.Buffer)
